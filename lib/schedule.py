@@ -2,24 +2,22 @@
 
 import httplib2
 from apiclient.discovery import build
-from oauth2client.client import OAuth2WebServerFlow
-from oauth2client.file import Storage
-from oauth2client.tools import run
-
+from oauth2client.client import SignedJwtAssertionCredentials
 
 class Calender(object):
     def __init__(self, credentials_path):
-        # get credentials with oauth
-        storage = Storage('{0}'.format(credentials_path))
-        credentials = storage.get()
-        if not credentials or credentials.invalid:
-            flow = OAuth2WebServerFlow(
-                client_id=CLIENT_ID,
-                client_secret=CLIENT_SECRET,
-                scope=['https://www.googleapis.com/auth/calendar'],
-                user_agent='Calendar apps/1.0')
-            credentials = run(flow, storage)
-
+        with open(credentials_path, 'rb') as f:
+            key = f.read()
+        service_account_name = SERVICE_ACCOUNT_NAME
+        self.calendarId = CALENDAR_ID
+ 
+        credentials = SignedJwtAssertionCredentials(
+            service_account_name, 
+            key,
+            scope=['https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.readonly'],
+            sub=SUB
+        )
         http = httplib2.Http()
         self.http = credentials.authorize(http)
 
@@ -28,10 +26,12 @@ class Calender(object):
         res = dict()
         service = build('calendar', 'v3', http=self.http)
         # 自分のカレンダーのみをソート
-        events = service.events().list(calendarId='primary', singleEvents=True, maxResults=2500, orderBy='startTime').execute()
+        print 'service', service.events()
+        events = service.events().list(calendarId=self.calendarId, singleEvents=True, maxResults=2500, orderBy='startTime').execute()
         # 現在時刻から一番近い予定を一件だけ取得
         res_exsit = True
         for event in events['items']:
+            print event
             if res_exsit:
                 if 'start' in event:
                     if 'dateTime' in event['start']:

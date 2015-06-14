@@ -2,6 +2,7 @@
 
 from flask import Flask, request
 from lib.slack import Message, ResponseSchedule
+import logging
 
 app = Flask(__name__)
 
@@ -14,6 +15,7 @@ def index():
 @app.route('/schedule', methods=['POST'])
 def schedule():
     msg = Message.parse(request)
+    logging.debug(msg)
     bot = ResponseSchedule(msg)
     return bot.schedule()
 

@@ -1,22 +1,13 @@
 #coding: utf-8
 from .schedule import Calender
 from flask import jsonify
+import logging
 
 
 class Message(object):
     """Slackのメッセージクラス"""
-    token = TOKEN
-    trigger_word = 'schedule'  # OutgoingWebhooksに設定したトリガー
-
-    def __init__(self, params):
-        self.team_id = params['team_id']
-        self.channel_id = params['channel_id']
-        self.channel_name = params['channel_name']
-        self.timestamp = params['timestamp']
-        self.user_id = params['user_id']
-        self.user_name = params['user_name']
-        self.text = params['text']
-        self.trigger_word = params['trigger_word']
+    def __init__(self):
+        self.token = TOKEN
 
     @classmethod
     def parse(cls, request):
@@ -33,9 +24,8 @@ class Message(object):
             msg.trigger_word = params['trigger_word']
 
             msg.args = msg.text.split()
-            if len(msg.args) >= 2:
-                print 'msg.args[1]', msg.args[1]
-                msg.command = msg.args[1]
+            if len(msg.args) >= 0:
+                msg.command = msg.args[0]
         except Exception, emg:
             print emg
         return msg
@@ -57,12 +47,12 @@ class ResponseSchedule(object):
         if not self.msg.command == 'schedule':
             return ''
         else:
-            cal = Calender('./calendar.dat')
+            cal = Calender('path/to/.p12')
             event = cal.get_event()
-            res = '{0} ：' \
-                  '{1} 開始です！ {2} へお急ぎ下さい。'.format(event['summary'], event['start'], event['location'])
+            txt = '{0} ：{1} 開始です！ {2} へお急ぎ下さい。'.format(event['summary'], event['start'], event['location'])
+            self.msg.text = txt
             return jsonify({
-                'text': res,
+                'text': self.msg.text,
                 'username': self._NAME,
                 'icon_emoji': self._ICON
             })
